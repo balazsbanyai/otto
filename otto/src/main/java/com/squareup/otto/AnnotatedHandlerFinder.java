@@ -72,8 +72,7 @@ final class AnnotatedHandlerFinder {
       if (method.isAnnotationPresent(Subscribe.class)) {
         Class<?>[] parameterTypes = method.getParameterTypes();
         if (parameterTypes.length != 1) {
-          throw new IllegalArgumentException("Method " + method + " has @Subscribe annotation but requires "
-              + parameterTypes.length + " arguments.  Methods must require a single argument.");
+          throw new IllegalArgumentException(ErrorMessages.newInvalidArgumentListMessage(method.getName(), parameterTypes.length));
         }
 
         Class<?> eventType = parameterTypes[0];
@@ -83,8 +82,7 @@ final class AnnotatedHandlerFinder {
         }
 
         if ((method.getModifiers() & Modifier.PUBLIC) == 0) {
-          throw new IllegalArgumentException("Method " + method + " has @Subscribe annotation on " + eventType
-              + " but is not 'public'.");
+          throw new IllegalArgumentException(ErrorMessages.newNotVisibleMessage(method.getName(), eventType.toString()));
         }
 
         Set<Method> methods = subscriberMethods.get(eventType);
