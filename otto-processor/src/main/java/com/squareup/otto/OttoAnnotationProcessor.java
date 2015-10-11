@@ -17,10 +17,18 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.util.AbstractElementVisitor6;
 import javax.tools.Diagnostic;
 
+/**
+ * Annotation processor that detects some cases of misusing Otto at compile time
+ *
+ * @author Balazs S Banyai
+ */
 @SupportedSourceVersion(SourceVersion.RELEASE_6)
 @SupportedAnnotationTypes({ "com.squareup.otto.Subscribe" })
 public class OttoAnnotationProcessor extends AbstractProcessor {
-    private AbstractMethodVisitor[] checks = { new VisibilityCheckerVisitor(), new ArgumentListLengthCheckerVisitor() };
+    private AbstractMethodVisitor[] checks = {
+            new VisibilityCheckerVisitor(),
+            new ArgumentListLengthCheckerVisitor()
+    };
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnvironment) {
@@ -39,7 +47,10 @@ public class OttoAnnotationProcessor extends AbstractProcessor {
         @Override
         public Void visitExecutable(ExecutableElement element, Void aVoid) {
             if (element.getParameters().size() != 1) {
-                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, ErrorMessages.newInvalidArgumentListMessage(element.toString(), ((ExecutableElement) element).getParameters().size()));
+                String methodName = element.toString(); // TODO enclosingElement!
+                int argumentListSize = element.getParameters().size();
+                String message = ErrorMessages.newInvalidArgumentListMessage(methodName, argumentListSize);
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, message);
             }
             return null;
         }
@@ -50,7 +61,10 @@ public class OttoAnnotationProcessor extends AbstractProcessor {
         @Override
         public Void visitExecutable(ExecutableElement element, Void aVoid) {
             if (!element.getModifiers().contains(Modifier.PUBLIC)) {
-                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, ErrorMessages.newNotVisibleMessage(element.toString(), ((ExecutableElement) element).getParameters().get(0).asType().toString()));
+                String methodName = element.toString();
+                String eventTypeName = element.getParameters().get(0).asType().toString();
+                String message = ErrorMessages.newNotVisibleMessage(methodName, eventTypeName);
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, message);
             }
             return null;
         }

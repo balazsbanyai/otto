@@ -72,7 +72,8 @@ final class AnnotatedHandlerFinder {
       if (method.isAnnotationPresent(Subscribe.class)) {
         Class<?>[] parameterTypes = method.getParameterTypes();
         if (parameterTypes.length != 1) {
-          throw new IllegalArgumentException(ErrorMessages.newInvalidArgumentListMessage(method.getName(), parameterTypes.length));
+          String message = ErrorMessages.newInvalidArgumentListMessage(method.getName(), parameterTypes.length);
+          throw new IllegalArgumentException(message);
         }
 
         Class<?> eventType = parameterTypes[0];
@@ -82,7 +83,8 @@ final class AnnotatedHandlerFinder {
         }
 
         if ((method.getModifiers() & Modifier.PUBLIC) == 0) {
-          throw new IllegalArgumentException(ErrorMessages.newNotVisibleMessage(method.getName(), eventType.toString()));
+          String message = ErrorMessages.newNotVisibleMessage(method.toString(), eventType.toString());
+          throw new IllegalArgumentException(message);
         }
 
         Set<Method> methods = subscriberMethods.get(eventType);
