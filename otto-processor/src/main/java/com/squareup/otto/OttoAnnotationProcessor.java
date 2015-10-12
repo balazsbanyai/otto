@@ -18,9 +18,9 @@ import javax.lang.model.util.AbstractElementVisitor6;
 import javax.tools.Diagnostic;
 
 /**
- * Annotation processor that detects some cases of misusing Otto at compile time
+ * Annotation processor that detects some cases of misusing Otto at compile time.
  *
- * @author Balazs S Banyai
+ * @author balazsbanyai
  */
 @SupportedSourceVersion(SourceVersion.RELEASE_6)
 @SupportedAnnotationTypes({ "com.squareup.otto.Subscribe" })
@@ -47,7 +47,7 @@ public class OttoAnnotationProcessor extends AbstractProcessor {
         @Override
         public Void visitExecutable(ExecutableElement element, Void aVoid) {
             if (element.getParameters().size() != 1) {
-                String methodName = element.toString(); // TODO enclosingElement!
+                String methodName = getQualifiedMethodName(element);
                 int argumentListSize = element.getParameters().size();
                 String message = ErrorMessages.newInvalidArgumentListMessage(methodName, argumentListSize);
                 processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, message);
@@ -61,13 +61,20 @@ public class OttoAnnotationProcessor extends AbstractProcessor {
         @Override
         public Void visitExecutable(ExecutableElement element, Void aVoid) {
             if (!element.getModifiers().contains(Modifier.PUBLIC)) {
-                String methodName = element.toString();
+                String methodName = getQualifiedMethodName(element);
                 String eventTypeName = element.getParameters().get(0).asType().toString();
                 String message = ErrorMessages.newNotVisibleMessage(methodName, eventTypeName);
                 processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, message);
             }
             return null;
         }
+    }
+
+    private String getQualifiedMethodName(ExecutableElement element) {
+        TypeElement typeElement = (TypeElement) element.getEnclosingElement();
+        String className = typeElement.getQualifiedName().toString();
+        String methodName = element.toString();
+        return className + "." + methodName;
     }
 
     private abstract class AbstractMethodVisitor extends AbstractElementVisitor6<Void, Void> {
