@@ -51,10 +51,9 @@ public class OttoAnnotationProcessorTest {
 
   @Mock private Set<? extends TypeElement> annotations;
 
-  private OttoAnnotationProcessor processor;
-
   @Mock private ExecutableElement executableElement;
 
+  private OttoAnnotationProcessor processor;
 
   @Before public void setUp() {
     MockitoAnnotations.initMocks(this);
