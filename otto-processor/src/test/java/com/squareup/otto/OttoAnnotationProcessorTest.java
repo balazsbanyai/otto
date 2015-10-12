@@ -38,132 +38,122 @@ import static org.mockito.Mockito.when;
  */
 public class OttoAnnotationProcessorTest {
 
-    private static final String METHOD_ARG_TYPE_NAME = "TestEvent";
-    private static final String METHOD_NAME = "testMethod";
-    private static final String QUALIFIER = "javax.annotation";
-    private static final String QUALIFIED_METHOD_NAME = QUALIFIER + "." + METHOD_NAME;
+  private static final String METHOD_ARG_TYPE_NAME = "TestEvent";
+  private static final String METHOD_NAME = "testMethod";
+  private static final String QUALIFIER = "javax.annotation";
+  private static final String QUALIFIED_METHOD_NAME = QUALIFIER + "." + METHOD_NAME;
 
-    @Mock
-    private ProcessingEnvironment env;
+  @Mock private ProcessingEnvironment env;
 
-    @Mock
-    private Messager messager;
+  @Mock private Messager messager;
 
-    @Mock
-    private RoundEnvironment roundEnvironment;
+  @Mock private RoundEnvironment roundEnvironment;
 
-    @Mock
-    private Set<? extends TypeElement> annotations;
+  @Mock private Set<? extends TypeElement> annotations;
 
-    private OttoAnnotationProcessor processor;
+  private OttoAnnotationProcessor processor;
 
-    @Mock
-    private ExecutableElement executableElement;
+  @Mock private ExecutableElement executableElement;
 
 
-    @Before
-    public void setUp() {
-        MockitoAnnotations.initMocks(this);
+  @Before public void setUp() {
+    MockitoAnnotations.initMocks(this);
 
-        when(env.getMessager()).thenReturn(messager);
+    when(env.getMessager()).thenReturn(messager);
 
-        processor = new OttoAnnotationProcessor();
-        processor.init(env);
+    processor = new OttoAnnotationProcessor();
+    processor.init(env);
 
-        Set<ExecutableElement> elements = Sets.newSet(executableElement);
-        when(roundEnvironment.getElementsAnnotatedWith(Subscribe.class)).thenReturn((Set) elements);
-        setupVisitableMockElement();
-    }
+    Set<ExecutableElement> elements = Sets.newSet(executableElement);
+    when(roundEnvironment.getElementsAnnotatedWith(Subscribe.class)).thenReturn((Set) elements);
+    setupVisitableMockElement();
+  }
 
-    private void setupVisitableMockElement() {
-        when(executableElement.accept(any(ElementVisitor.class), anyObject())).then(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
-                ElementVisitor visitor = invocationOnMock.getArgumentAt(0, ElementVisitor.class);
-                Object parameter = invocationOnMock.getArguments()[1];
-                visitor.visitExecutable(executableElement, parameter);
-                return null;
-            }
-        });
+  private void setupVisitableMockElement() {
+    when(executableElement.accept(any(ElementVisitor.class), anyObject())).then(new Answer<Object>() {
+      @Override
+      public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
+        ElementVisitor visitor = invocationOnMock.getArgumentAt(0, ElementVisitor.class);
+        Object parameter = invocationOnMock.getArguments()[1];
+        visitor.visitExecutable(executableElement, parameter);
+        return null;
+      }
+    });
 
-        TypeElement enclosingElement = mockTypeElementWithQualifiedName();
-        when(executableElement.getEnclosingElement()).thenReturn(enclosingElement);
-        when(executableElement.toString()).thenReturn(METHOD_NAME);
-    }
+    TypeElement enclosingElement = mockTypeElementWithQualifiedName();
+    when(executableElement.getEnclosingElement()).thenReturn(enclosingElement);
+    when(executableElement.toString()).thenReturn(METHOD_NAME);
+  }
 
-    private TypeElement mockTypeElementWithQualifiedName() {
-        TypeElement mockTypeElement = mock(TypeElement.class);
-        Name mockName = mock(Name.class);
-        when(mockName.toString()).thenReturn(QUALIFIER);
-        when(mockTypeElement.getQualifiedName()).thenReturn(mockName);
-        return mockTypeElement;
-    }
+  private TypeElement mockTypeElementWithQualifiedName() {
+    TypeElement mockTypeElement = mock(TypeElement.class);
+    Name mockName = mock(Name.class);
+    when(mockName.toString()).thenReturn(QUALIFIER);
+    when(mockTypeElement.getQualifiedName()).thenReturn(mockName);
+    return mockTypeElement;
+  }
 
-    private VariableElement mockMethodArgumentWithTypeName() {
-        VariableElement mockEvent = mock(VariableElement.class);
-        TypeMirror mockTypeMirror = mock(TypeMirror.class);
-        when(mockTypeMirror.toString()).thenReturn(METHOD_ARG_TYPE_NAME);
-        when(mockEvent.asType()).thenReturn(mockTypeMirror);
-        return mockEvent;
-    }
+  private VariableElement mockMethodArgumentWithTypeName() {
+    VariableElement mockEvent = mock(VariableElement.class);
+    TypeMirror mockTypeMirror = mock(TypeMirror.class);
+    when(mockTypeMirror.toString()).thenReturn(METHOD_ARG_TYPE_NAME);
+    when(mockEvent.asType()).thenReturn(mockTypeMirror);
+    return mockEvent;
+  }
 
-    @Test
-    public void process_validSignature_noErrorReported() {
-        VariableElement argument1 = mockMethodArgumentWithTypeName();
-        when(executableElement.getModifiers()).thenReturn(EnumSet.of(Modifier.PUBLIC));
-        when(executableElement.getParameters()).thenReturn((List) asList(argument1));
+  @Test public void process_validSignature_noErrorReported() {
+    VariableElement argument1 = mockMethodArgumentWithTypeName();
+    when(executableElement.getModifiers()).thenReturn(EnumSet.of(Modifier.PUBLIC));
+    when(executableElement.getParameters()).thenReturn((List) asList(argument1));
 
-        processor.process(annotations, roundEnvironment);
+    processor.process(annotations, roundEnvironment);
 
-        verifyZeroInteractions(messager);
-    }
+    verifyZeroInteractions(messager);
+  }
 
-    @Test
-    public void process_wrongArgumentListLength_errorReported() {
-        VariableElement argument1 = mockMethodArgumentWithTypeName();
-        VariableElement argument2 = mockMethodArgumentWithTypeName();
-        when(executableElement.getModifiers()).thenReturn(EnumSet.of(Modifier.PUBLIC));
-        when(executableElement.getParameters()).thenReturn((List) asList(argument1, argument2));
+  @Test public void process_wrongArgumentListLength_errorReported() {
+    VariableElement argument1 = mockMethodArgumentWithTypeName();
+    VariableElement argument2 = mockMethodArgumentWithTypeName();
+    when(executableElement.getModifiers()).thenReturn(EnumSet.of(Modifier.PUBLIC));
+    when(executableElement.getParameters()).thenReturn((List) asList(argument1, argument2));
 
-        processor.process(annotations, roundEnvironment);
+    processor.process(annotations, roundEnvironment);
 
-        verifyWrongArgumentListLengthMessage();
-    }
+    verifyWrongArgumentListLengthMessage();
+  }
 
-    private void verifyWrongArgumentListLengthMessage() {
-        Diagnostic.Kind expectedKind = Diagnostic.Kind.ERROR;
-        String expectedMessage = ErrorMessages.newInvalidArgumentListMessage(QUALIFIED_METHOD_NAME, executableElement.getParameters().size());
-        verify(messager).printMessage(eq(expectedKind), eq(expectedMessage));
-    }
+  private void verifyWrongArgumentListLengthMessage() {
+    Diagnostic.Kind expectedKind = Diagnostic.Kind.ERROR;
+    String expectedMessage = ErrorMessages.newInvalidArgumentListMessage(QUALIFIED_METHOD_NAME, executableElement.getParameters().size());
+    verify(messager).printMessage(eq(expectedKind), eq(expectedMessage));
+  }
 
-    @Test
-    public void process_wrongModifier_errorReported() {
-        VariableElement argument1 = mockMethodArgumentWithTypeName();
-        List args = asList(new VariableElement[]{argument1});
-        when(executableElement.getModifiers()).thenReturn(EnumSet.of(Modifier.PRIVATE));
-        when(executableElement.getParameters()).thenReturn(args);
+  @Test public void process_wrongModifier_errorReported() {
+    VariableElement argument1 = mockMethodArgumentWithTypeName();
+    List args = asList(new VariableElement[]{argument1});
+    when(executableElement.getModifiers()).thenReturn(EnumSet.of(Modifier.PRIVATE));
+    when(executableElement.getParameters()).thenReturn(args);
 
-        processor.process(annotations, roundEnvironment);
+    processor.process(annotations, roundEnvironment);
 
-        verifyNotVisibleMessage();
-    }
+    verifyNotVisibleMessage();
+  }
 
-    private void verifyNotVisibleMessage() {
-        Diagnostic.Kind expectedKind = Diagnostic.Kind.ERROR;
-        String expectedMessage = ErrorMessages.newNotVisibleMessage(QUALIFIED_METHOD_NAME, METHOD_ARG_TYPE_NAME);
-        verify(messager).printMessage(eq(expectedKind), eq(expectedMessage));
-    }
+  private void verifyNotVisibleMessage() {
+    Diagnostic.Kind expectedKind = Diagnostic.Kind.ERROR;
+    String expectedMessage = ErrorMessages.newNotVisibleMessage(QUALIFIED_METHOD_NAME, METHOD_ARG_TYPE_NAME);
+    verify(messager).printMessage(eq(expectedKind), eq(expectedMessage));
+  }
 
-    @Test
-    public void process_wrongModifierAndParameterLength_bothErrorsReported() {
-        VariableElement argument1 = mockMethodArgumentWithTypeName();
-        VariableElement argument2 = mockMethodArgumentWithTypeName();
-        when(executableElement.getModifiers()).thenReturn(EnumSet.of(Modifier.PRIVATE));
-        when(executableElement.getParameters()).thenReturn((List) asList(argument1, argument2));
+  @Test public void process_wrongModifierAndParameterLength_bothErrorsReported() {
+    VariableElement argument1 = mockMethodArgumentWithTypeName();
+    VariableElement argument2 = mockMethodArgumentWithTypeName();
+    when(executableElement.getModifiers()).thenReturn(EnumSet.of(Modifier.PRIVATE));
+    when(executableElement.getParameters()).thenReturn((List) asList(argument1, argument2));
 
-        processor.process(annotations, roundEnvironment);
+    processor.process(annotations, roundEnvironment);
 
-        verifyNotVisibleMessage();
-        verifyWrongArgumentListLengthMessage();
-    }
+    verifyNotVisibleMessage();
+    verifyWrongArgumentListLengthMessage();
+  }
 }
